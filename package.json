@@ -1,0 +1,17 @@
+{
+  "name": "claude-sdk-repro",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "npx tsx claude.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.11",
+    "zod": "^4.3.5"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.9",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

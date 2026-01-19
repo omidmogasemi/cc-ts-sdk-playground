@@ -9,8 +9,8 @@ npm test                      # interactive multi-turn chat
 echo "prompt" | npm test      # single message
 ```
 
-Logs written to `/tmp`:
-- `claude-sdk-<timestamp>.json` - raw SDK events
+Logs written incrementally to `/tmp`:
+- `claude-sdk-<timestamp>.jsonl` - raw SDK events (newline-delimited JSON)
 - `claude-sdk-<timestamp>.txt` - text output
 
 ## Reproducing bugs

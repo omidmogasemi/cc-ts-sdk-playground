@@ -13,7 +13,10 @@ async function* chat(
 ): AsyncGenerator<SDKMessage, void> {
   const userMessages = createUserMessageStream(input);
 
-  for await (const event of query({ prompt: userMessages })) {
+  for await (const event of query({
+    prompt: userMessages,
+    options: { dangerously_skip_permissions: true },
+  })) {
     yield event;
   }
 }
@@ -43,8 +46,12 @@ function createUserMessageStream(
 
 async function main() {
   const timestamp = Date.now();
-  const jsonLogPath = path.join(os.tmpdir(), `claude-sdk-${timestamp}.json`);
+  const jsonLogPath = path.join(os.tmpdir(), `claude-sdk-${timestamp}.jsonl`);
   const textLogPath = path.join(os.tmpdir(), `claude-sdk-${timestamp}.txt`);
+
+  // Create empty files immediately
+  fs.writeFileSync(jsonLogPath, "");
+  fs.writeFileSync(textLogPath, "");
 
   console.log("Claude Agent SDK Test Harness");
   console.log(`JSON log: ${jsonLogPath}`);
@@ -56,20 +63,18 @@ async function main() {
     output: process.stdout,
   });
 
-  const jsonEvents: SDKMessage[] = [];
-  let textOutput = "";
-
   const userInput = createReadlineIterable(rl);
   rl.prompt();
 
   for await (const event of chat(userInput)) {
-    jsonEvents.push(event);
+    // Write each event as a JSON line immediately
+    fs.appendFileSync(jsonLogPath, JSON.stringify(event) + "\n");
 
     if (event.type === "assistant") {
       for (const block of event.message.content) {
         if (block.type === "text") {
           process.stdout.write(block.text);
-          textOutput += block.text;
+          fs.appendFileSync(textLogPath, block.text);
         }
       }
     }
@@ -77,19 +82,17 @@ async function main() {
     if (event.type === "result") {
       const resultLine = `\n\nResult: ${event.subtype}`;
       console.log(resultLine);
-      textOutput += resultLine;
+      fs.appendFileSync(textLogPath, resultLine);
       if (event.subtype === "success") {
         const costLine = `Cost: $${event.total_cost_usd.toFixed(4)}`;
         console.log(costLine);
-        textOutput += `\n${costLine}`;
+        fs.appendFileSync(textLogPath, `\n${costLine}`);
       }
-      textOutput += "\n---\n";
+      fs.appendFileSync(textLogPath, "\n---\n");
       rl.prompt();
     }
   }
 
-  fs.writeFileSync(jsonLogPath, JSON.stringify(jsonEvents, null, 2));
-  fs.writeFileSync(textLogPath, textOutput);
   rl.close();
 }
 
